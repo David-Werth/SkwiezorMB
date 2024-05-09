@@ -48,10 +48,20 @@ SkwiezorMBAudioProcessor::SkwiezorMBAudioProcessor()
     floatHelper(compressor.threshold, Names::Threshold_Low_Band);
     choiceHelper(compressor.ratio, Names::Ratio_Low_Band);
     boolHelper(compressor.bypass, Names::Bypass_Low_Band);
-    floatHelper(lowCrossover, Names::Low_mid_Crossover_Freq);
     
-    LP.setType(juce::dsp::LinkwitzRileyFilterType::lowpass);
-    HP.setType(juce::dsp::LinkwitzRileyFilterType::highpass);
+    floatHelper(lowMidCrossover, Names::Low_mid_Crossover_Freq);
+    floatHelper(midHighCrossover, Names::Mid_high_Crossover_Freq);
+    
+    LP1.setType(juce::dsp::LinkwitzRileyFilterType::lowpass);
+    HP1.setType(juce::dsp::LinkwitzRileyFilterType::highpass);
+    
+    LP2.setType(juce::dsp::LinkwitzRileyFilterType::lowpass);
+    HP2.setType(juce::dsp::LinkwitzRileyFilterType::highpass);
+    
+    AP2.setType(juce::dsp::LinkwitzRileyFilterType::allpass);
+    
+//    invAP1.setType(juce::dsp::LinkwitzRileyFilterType::allpass);
+//    invAP2.setType(juce::dsp::LinkwitzRileyFilterType::allpass);
 }
 
 SkwiezorMBAudioProcessor::~SkwiezorMBAudioProcessor()
@@ -133,9 +143,18 @@ void SkwiezorMBAudioProcessor::prepareToPlay (double sampleRate, int samplesPerB
     
     compressor.prepare(spec);
     
-    LP.prepare(spec);
-    HP.prepare(spec);
+    LP1.prepare(spec);
+    HP1.prepare(spec);
     
+    LP2.prepare(spec);
+    HP2.prepare(spec);
+    
+    AP2.prepare(spec);
+
+//    invAP1.prepare(spec);
+//    invAP2.prepare(spec);
+//    invAPBuffer.setSize(spec.numChannels, samplesPerBlock);
+
     for ( auto& buffer : filterBuffers )
     {
         buffer.setSize(spec.numChannels, samplesPerBlock);
@@ -197,21 +216,47 @@ void SkwiezorMBAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         filterBuffer = buffer;
     }
     
-    auto cutoff = lowCrossover->get();
-    LP.setCutoffFrequency(cutoff);
-    HP.setCutoffFrequency(cutoff);
+//    invAPBuffer = buffer;
+    
+    auto lowMidCutoffFreq = lowMidCrossover->get();
+    LP1.setCutoffFrequency(lowMidCutoffFreq);
+    HP1.setCutoffFrequency(lowMidCutoffFreq);
+//    invAP1.setCutoffFrequency(lowMidCutoffFreq);
+    
+    
+    auto midHightCutoffFreq = midHighCrossover->get();
+    LP2.setCutoffFrequency(midHightCutoffFreq);
+    HP2.setCutoffFrequency(midHightCutoffFreq);
+    AP2.setCutoffFrequency(midHightCutoffFreq);
+//    invAP2.setCutoffFrequency(midHightCutoffFreq);
     
     auto filterBuffer0Block = juce::dsp::AudioBlock<float>(filterBuffers[0]);
     auto filterBuffer1Block = juce::dsp::AudioBlock<float>(filterBuffers[1]);
+    auto filterBuffer2Block = juce::dsp::AudioBlock<float>(filterBuffers[2]);
     
     auto filterBuffer0Context = juce::dsp::ProcessContextReplacing<float>(filterBuffer0Block);
     auto filterBuffer1Context = juce::dsp::ProcessContextReplacing<float>(filterBuffer1Block);
+    auto filterBuffer2Context = juce::dsp::ProcessContextReplacing<float>(filterBuffer2Block);
     
-    LP.process(filterBuffer0Context);
-    HP.process(filterBuffer1Context);
+    LP1.process(filterBuffer0Context);
+    AP2.process(filterBuffer0Context);
+    
+    HP1.process(filterBuffer1Context);
+    filterBuffers[2] = filterBuffers[1];
+    LP2.process(filterBuffer1Context);
+    
+    HP2.process(filterBuffer2Context);
+    
+//    auto invAPBlock = juce::dsp::AudioBlock<float>(invAPBuffer);
+//    auto invAPContext = juce::dsp::ProcessContextReplacing<float>(invAPBlock);
+//    invAP1.process(invAPContext);
+//    invAP2.process(invAPContext);
     
     auto numSamples = buffer.getNumSamples();
     auto numChannels = buffer.getNumChannels();
+    
+    if ( compressor.bypass->get() )
+        return;
     
     buffer.clear();
     
@@ -225,6 +270,17 @@ void SkwiezorMBAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     
     addFilterBand(buffer, filterBuffers[0]);
     addFilterBand(buffer, filterBuffers[1]);
+    addFilterBand(buffer, filterBuffers[2]);
+    
+//    if ( compressor.bypass->get() )
+//    {
+//        for ( auto ch = 0; ch < numChannels; ++ch )
+//        {
+//            juce::FloatVectorOperations::multiply(invAPBuffer.getWritePointer(ch), -1.f, numSamples);
+//        }
+//        
+//        addFilterBand(buffer, invAPBuffer);
+//    }
 }
 
 //==============================================================================
@@ -288,7 +344,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout SkwiezorMBAudioProcessor::cr
     
     layout.add(std::make_unique<AudioParameterBool>(juce::ParameterID{params.at(Names::Bypass_Low_Band), 1}, params.at(Names::Bypass_Low_Band), false));
     
-    layout.add(std::make_unique<AudioParameterFloat>(juce::ParameterID{params.at(Names::Low_mid_Crossover_Freq), 1}, params.at(Names::Low_mid_Crossover_Freq), NormalisableRange<float>(20, 20000, 1, 1), 500));
+    layout.add(std::make_unique<AudioParameterFloat>(juce::ParameterID{params.at(Names::Mid_high_Crossover_Freq), 1}, params.at(Names::Mid_high_Crossover_Freq), NormalisableRange<float>(20, 999, 1, 1), 400));
+    
+    layout.add(std::make_unique<AudioParameterFloat>(juce::ParameterID{params.at(Names::Low_mid_Crossover_Freq), 1}, params.at(Names::Low_mid_Crossover_Freq), NormalisableRange<float>(1000, 20000, 1, 1), 2000));
+
     
     return layout;
 }
