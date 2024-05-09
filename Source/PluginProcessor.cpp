@@ -22,21 +22,32 @@ SkwiezorMBAudioProcessor::SkwiezorMBAudioProcessor()
                        )
 #endif
 {
-    compressor.attack = dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter("Attack"));
-    jassert(compressor.attack != nullptr);
+    using namespace Params;
+    const auto& params = GetParams();
     
-    compressor.release = dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter("Release"));
-    jassert(compressor.release != nullptr);
-
-    compressor.threshold = dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter("Threshold"));
-    jassert(compressor.threshold != nullptr);
+    auto floatHelper = [&apvts = this->apvts, &params](auto& param, const auto& paramName)
+    {
+        param = dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter(params.at(paramName)));
+        jassert(param != nullptr);
+    };
     
-    compressor.ratio = dynamic_cast<juce::AudioParameterChoice*>(apvts.getParameter("Ratio"));
-    jassert(compressor.ratio != nullptr);
+    auto choiceHelper = [&apvts = this->apvts, &params](auto& param, const auto& paramName)
+    {
+        param = dynamic_cast<juce::AudioParameterChoice*>(apvts.getParameter(params.at(paramName)));
+        jassert(param != nullptr);
+    };
     
-    compressor.bypass = dynamic_cast<juce::AudioParameterBool*>(apvts.getParameter("Bypass"));
-    jassert(compressor.bypass != nullptr);
-
+    auto boolHelper = [&apvts = this->apvts, &params](auto& param, const auto& paramName)
+    {
+        param = dynamic_cast<juce::AudioParameterBool*>(apvts.getParameter(params.at(paramName)));
+        jassert(param != nullptr);
+    };
+    
+    floatHelper(compressor.attack, Names::Attack_Low_Band);
+    floatHelper(compressor.release, Names::Release_Low_Band);
+    floatHelper(compressor.threshold, Names::Threshold_Low_Band);
+    choiceHelper(compressor.ratio, Names::Ratio_Low_Band);
+    boolHelper(compressor.bypass, Names::Bypass_Low_Band);
 }
 
 SkwiezorMBAudioProcessor::~SkwiezorMBAudioProcessor()
@@ -209,14 +220,16 @@ juce::AudioProcessorValueTreeState::ParameterLayout SkwiezorMBAudioProcessor::cr
     APVTS::ParameterLayout layout;
     
     using namespace juce;
+    using namespace Params;
+    const auto& params = GetParams();
     
-    layout.add(std::make_unique<AudioParameterFloat>(juce::ParameterID{"Threshold", 1}, "Threshold", NormalisableRange<float>(-60, 12, 1, 1), 0));
+    layout.add(std::make_unique<AudioParameterFloat>(juce::ParameterID{params.at(Names::Threshold_Low_Band), 1}, params.at(Names::Threshold_Low_Band), NormalisableRange<float>(-60, 12, 1, 1), 0));
     
     auto attackReleaseRange = NormalisableRange<float>(1, 500, 1, 1);
     
-    layout.add(std::make_unique<AudioParameterFloat>(juce::ParameterID{"Attack", 1}, "Attack", attackReleaseRange, 50));
+    layout.add(std::make_unique<AudioParameterFloat>(juce::ParameterID{params.at(Names::Attack_Low_Band), 1}, params.at(Names::Attack_Low_Band), attackReleaseRange, 50));
     
-    layout.add(std::make_unique<AudioParameterFloat>(juce::ParameterID{"Release", 1}, "Release", attackReleaseRange, 250));
+    layout.add(std::make_unique<AudioParameterFloat>(juce::ParameterID{params.at(Names::Release_Low_Band), 1}, params.at(Names::Release_Low_Band), attackReleaseRange, 250));
     
     auto choices = std::vector<double>{ 1, 1.5, 2, 3, 4, 5, 6, 8, 10, 15, 20, 50, 100 };
     juce::StringArray sa;
@@ -225,9 +238,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout SkwiezorMBAudioProcessor::cr
         sa.add( juce::String(choice, 1) );
     }
     
-    layout.add(std::make_unique<AudioParameterChoice>(juce::ParameterID{"Ratio", 1}, "Ratio", sa, 3));
+    layout.add(std::make_unique<AudioParameterChoice>(juce::ParameterID{params.at(Names::Ratio_Low_Band), 1}, params.at(Names::Ratio_Low_Band), sa, 3));
     
-    layout.add(std::make_unique<AudioParameterBool>(juce::ParameterID{"Bypass", 1}, "Bypass", false));
+    layout.add(std::make_unique<AudioParameterBool>(juce::ParameterID{params.at(Names::Bypass_Low_Band), 1}, params.at(Names::Bypass_Low_Band), false));
     
     return layout;
 }

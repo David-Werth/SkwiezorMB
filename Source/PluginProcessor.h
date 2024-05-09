@@ -8,7 +8,79 @@
 
 #pragma once
 
+/*
+ DSP Roadmap:
+ 1) figure out how to split audio into 3 bands
+ 2) create parameters to controll where split happens
+ 3) ensure splitting into 3 bands produces no audible artifacts
+ 4) create audio parameters for the 3 compressor bands and these need to live on each band instance.
+ 5) add 2 remaining compressors
+ 6) add mute, solo, bypass individual compressors
+ 7) add input and output gain
+ 8) clean up
+ */
+
 #include <JuceHeader.h>
+
+namespace Params 
+{
+enum Names 
+{
+    Low_mid_Crossover_Freq,
+    Mid_high_Crossover_Freq,
+    
+    Threshold_Low_Band,
+    Threshold_Mid_Band,
+    Threshold_High_Band,
+    
+    Attack_Low_Band,
+    Attack_Mid_Band,
+    Attack_High_Band,
+    
+    Release_Low_Band,
+    Release_Mid_Band,
+    Release_High_Band,
+    
+    Ratio_Low_Band,
+    Ratio_Mid_Band,
+    Ratio_High_Band,
+    
+    Bypass_Low_Band,
+    Bypass_Mid_Band,
+    Bypass_High_Band,
+};
+
+inline const std::map<Names, juce::String>& GetParams()
+{
+    static std::map<Names, juce::String> params = 
+    {
+        {Low_mid_Crossover_Freq, "Low-Mid Crossover Freq"},
+        {Mid_high_Crossover_Freq, "Mid-High Crossover Freq"},
+
+        {Threshold_Low_Band, "Threshold Low Band"},
+        {Threshold_Mid_Band, "Threshold Mid Band"},
+        {Threshold_High_Band, "Threshold High Band"},
+
+        {Attack_Low_Band, "Attack Low Band"},
+        {Attack_Mid_Band, "Attack Mid Band"},
+        {Attack_High_Band, "Attack High Band"},
+
+        {Release_Low_Band, "Release Low Band"},
+        {Release_Mid_Band, "Release Mid Band"},
+        {Release_High_Band, "Release High Band"},
+
+        {Ratio_Low_Band, "Ratio Low Band"},
+        {Ratio_Mid_Band, "Ratio Mid Band"},
+        {Ratio_High_Band, "Ratio High Band"},
+
+        {Bypass_Low_Band, "Bypass Low Band"},
+        {Bypass_Mid_Band, "Bypass Mid Band"},
+        {Bypass_High_Band, "Bypass High Band"},
+    };
+    
+    return params;
+}
+}
 
 struct CompressorBand
 {
