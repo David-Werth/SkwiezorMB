@@ -73,7 +73,11 @@ SkwiezorMBAudioProcessor::SkwiezorMBAudioProcessor()
     
     floatHelper(lowMidCrossover,        Names::Low_mid_Crossover_Freq);
     floatHelper(midHighCrossover,       Names::Mid_high_Crossover_Freq);
-    
+
+    floatHelper(inputGainParam,         Names::Gain_In);
+    floatHelper(outputGainParam,         Names::Gain_Out);
+
+
     LP1.setType(juce::dsp::LinkwitzRileyFilterType::lowpass);
     HP1.setType(juce::dsp::LinkwitzRileyFilterType::highpass);
     
@@ -170,7 +174,13 @@ void SkwiezorMBAudioProcessor::prepareToPlay (double sampleRate, int samplesPerB
     
     LP2.prepare(spec);
     HP2.prepare(spec);
-
+    
+    inputGain.prepare(spec);
+    outputGain.prepare(spec);
+    
+    inputGain.setRampDurationSeconds(0.05);
+    outputGain.setRampDurationSeconds(0.05);
+    
     for ( auto& buffer : filterBuffers )
     {
         buffer.setSize(spec.numChannels, samplesPerBlock);
@@ -209,26 +219,10 @@ bool SkwiezorMBAudioProcessor::isBusesLayoutSupported (const BusesLayout& layout
 }
 #endif
 
-void SkwiezorMBAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
+void SkwiezorMBAudioProcessor::updateState()
 {
-    juce::ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels  = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
-    
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
-    
     for ( auto& compressor : compressors )
         compressor.updateCompressorSettings();
-    
-    for ( auto& filterBuffer : filterBuffers )
-        filterBuffer = buffer;
     
     auto lowMidCutoffFreq = lowMidCrossover->get();
     LP1.setCutoffFrequency(lowMidCutoffFreq);
@@ -238,6 +232,15 @@ void SkwiezorMBAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     AP2.setCutoffFrequency(midHighCutoffFreq);
     LP2.setCutoffFrequency(midHighCutoffFreq);
     HP2.setCutoffFrequency(midHighCutoffFreq);
+    
+    inputGain.setGainDecibels(inputGainParam->get());
+    outputGain.setGainDecibels(outputGainParam->get());
+}
+
+void SkwiezorMBAudioProcessor::splitBands(const juce::AudioBuffer<float> &inputBuffer)
+{
+    for ( auto& filterBuffer : filterBuffers )
+        filterBuffer = inputBuffer;
     
     auto filterBuffer0Block = juce::dsp::AudioBlock<float>(filterBuffers[0]);
     auto filterBuffer1Block = juce::dsp::AudioBlock<float>(filterBuffers[1]);
@@ -255,6 +258,29 @@ void SkwiezorMBAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     LP2.process(filterBuffer1Context);
     
     HP2.process(filterBuffer2Context);
+}
+
+
+void SkwiezorMBAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
+{
+    juce::ScopedNoDenormals noDenormals;
+    auto totalNumInputChannels  = getTotalNumInputChannels();
+    auto totalNumOutputChannels = getTotalNumOutputChannels();
+    
+    // In case we have more outputs than inputs, this code clears any output
+    // channels that didn't contain input data, (because these aren't
+    // guaranteed to be empty - they may contain garbage).
+    // This is here to avoid people getting screaming feedback
+    // when they first compile a plugin, but obviously you don't need to keep
+    // this code if your algorithm always overwrites all the output channels.
+    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+        buffer.clear (i, 0, buffer.getNumSamples());
+    
+    updateState();
+    
+    applyGain(buffer, inputGain);
+    
+    splitBands(buffer);
     
     for ( size_t i = 0; i < filterBuffers.size(); ++i )
         compressors[i].process(filterBuffers[i]);
@@ -298,6 +324,8 @@ void SkwiezorMBAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
                 addFilterBand(buffer, filterBuffers[i]);
         }
     }
+    
+    applyGain(buffer, outputGain);
 }
 
 //==============================================================================
@@ -343,6 +371,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout SkwiezorMBAudioProcessor::cr
     const auto& params = GetParams();
     
     auto attackReleaseRange = NormalisableRange<float>(0.1, 500, 0.1, 1);
+    auto thresholdRange = NormalisableRange<float>(-60, 12, 1, 1);
     
     auto choices = std::vector<double>{ 1, 1.5, 2, 3, 4, 5, 6, 8, 10, 15, 20, 50, 100 };
     juce::StringArray sa;
@@ -350,10 +379,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout SkwiezorMBAudioProcessor::cr
     {
         sa.add( juce::String(choice, 1) );
     }
+    
+    auto gainRange = NormalisableRange<float>(-24.f, 24.f, 0.5f, 1.f);
+    
+    layout.add(std::make_unique<AudioParameterFloat>(juce::ParameterID{params.at(Names::Gain_In), 1}, params.at(Names::Gain_In), gainRange, 0));
+    layout.add(std::make_unique<AudioParameterFloat>(juce::ParameterID{params.at(Names::Gain_Out), 1}, params.at(Names::Gain_Out), gainRange, 0));
 
-    layout.add(std::make_unique<AudioParameterFloat>(juce::ParameterID{params.at(Names::Threshold_Low_Band), 1}, params.at(Names::Threshold_Low_Band), NormalisableRange<float>(-60, 12, 1, 1), 0));
-    layout.add(std::make_unique<AudioParameterFloat>(juce::ParameterID{params.at(Names::Threshold_Mid_Band), 1}, params.at(Names::Threshold_Mid_Band), NormalisableRange<float>(-60, 12, 1, 1), 0));
-    layout.add(std::make_unique<AudioParameterFloat>(juce::ParameterID{params.at(Names::Threshold_High_Band), 1}, params.at(Names::Threshold_High_Band), NormalisableRange<float>(-60, 12, 1, 1), 0));
+    layout.add(std::make_unique<AudioParameterFloat>(juce::ParameterID{params.at(Names::Threshold_Low_Band), 1}, params.at(Names::Threshold_Low_Band), thresholdRange, 0));
+    layout.add(std::make_unique<AudioParameterFloat>(juce::ParameterID{params.at(Names::Threshold_Mid_Band), 1}, params.at(Names::Threshold_Mid_Band), thresholdRange, 0));
+    layout.add(std::make_unique<AudioParameterFloat>(juce::ParameterID{params.at(Names::Threshold_High_Band), 1}, params.at(Names::Threshold_High_Band), thresholdRange, 0));
         
     layout.add(std::make_unique<AudioParameterFloat>(juce::ParameterID{params.at(Names::Attack_Low_Band), 1}, params.at(Names::Attack_Low_Band), attackReleaseRange, 50));
     layout.add(std::make_unique<AudioParameterFloat>(juce::ParameterID{params.at(Names::Attack_Mid_Band), 1}, params.at(Names::Attack_Mid_Band), attackReleaseRange, 50));
