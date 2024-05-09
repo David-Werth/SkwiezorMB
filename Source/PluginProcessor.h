@@ -9,15 +9,21 @@
 #pragma once
 
 /*
- DSP Roadmap:
- 1) figure out how to split audio into 3 bands *DONE*
- 2) create parameters to controll where split happens *DONE*
- 3) ensure splitting into 3 bands produces no audible artifacts *DONE*
- 4) create audio parameters for the 3 compressor bands and these need to live on each band instance *DONE*
- 5) add 2 remaining compressors *DONE*
- 6) add mute, solo, bypass individual compressors *DONE*
- 7) add input and output gain *DONE*
- 8) clean up
+ GUI Roadmap:
+ 1)     Global controls (x-over sliders, gain sliders)
+ 2)     Main band controlls (attack, release, threshold, ratio)
+ 3)     Add solo, mute, bypass buttons
+ 4)     Band select functionality
+ 5)     Band select buttons reflect solo, mute, bypass states
+ 6)     Custom look and feel for sliders and toggle buttons
+ 7)     Spectrum analyzer overview
+ 8)     Data structures for spectrum analyzer
+ 9)     Fifo usage in pluginProcessor::processBlock
+ 10)    Implementation of the analyzer rendering pre-computed paths
+ 11)    Draw crossovers on top of the analyzer plot
+ 12)    Draw gain reduction on top of the analyzer
+ 13)    Analyzer bypass
+ 14)    Global bypass button
  */
 
 #include <JuceHeader.h>

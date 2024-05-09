@@ -336,8 +336,8 @@ bool SkwiezorMBAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* SkwiezorMBAudioProcessor::createEditor()
 {
-    // return new SkwiezorMBAudioProcessorEditor (*this);
-    return new juce::GenericAudioProcessorEditor(*this);
+    return new SkwiezorMBAudioProcessorEditor (*this);
+    // return new juce::GenericAudioProcessorEditor(*this);
 }
 
 //==============================================================================
