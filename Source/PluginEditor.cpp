@@ -315,29 +315,6 @@ releaseSlider(nullptr, "ms", "RELEASE"),
 thresholdSlider(nullptr, "dB", "THRESHOLD"),
 ratioSlider(nullptr, "")
 {
-//    using namespace Params;
-//    const auto& params = GetParams();
-
-//    auto getParamHelper = [&params, &apvts = this->apvts](const auto& name) -> auto&
-//    {
-//        return getParam(apvts, params, name);
-//    };
-    
-//    attackSlider.changeParam(&getParamHelper(Names::Attack_Low_Band));
-//    releaseSlider.changeParam(&getParamHelper(Names::Release_Low_Band));
-//    thresholdSlider.changeParam(&getParamHelper(Names::Threshold_Low_Band));
-//    ratioSlider.changeParam(&getParamHelper(Names::Ratio_Low_Band));
-//    
-//    addLabelPairs(attackSlider.labels, getParamHelper(Names::Attack_Low_Band), "ms");
-//    addLabelPairs(releaseSlider.labels, getParamHelper(Names::Release_Low_Band), "ms");
-//    addLabelPairs(thresholdSlider.labels, getParamHelper(Names::Threshold_Low_Band), "dB");
-//    
-//    ratioSlider.labels.clear();
-//    ratioSlider.labels.add({0.f, "1:1"});
-//    auto ratioParam = dynamic_cast<juce::AudioParameterChoice*>(&getParamHelper(Names::Ratio_Low_Band));
-//    ratioSlider.labels.add({1.0f,
-//        juce::String(ratioParam->choices.getReference(ratioParam->choices.size() -1).getIntValue()) + ":1"});
-    
     addAndMakeVisible(attackSlider);
     addAndMakeVisible(releaseSlider);
     addAndMakeVisible(thresholdSlider);
@@ -350,10 +327,6 @@ ratioSlider(nullptr, "")
     addAndMakeVisible(bypassButton);
     addAndMakeVisible(soloButton);
     addAndMakeVisible(muteButton);
-    
-//    makeAttachmentHelper(bypassButtonAttachment, Names::Bypass_Low_Band, bypassButton);
-//    makeAttachmentHelper(soloButtonAttachment, Names::Solo_Low_Band, soloButton);
-//    makeAttachmentHelper(muteButtonAttachment, Names::Mute_Low_Band, muteButton);
     
     lowBand.setName("LOW");
     midBand.setName("MID");
