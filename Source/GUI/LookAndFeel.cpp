@@ -128,10 +128,13 @@ void LookAndFeel::drawToggleButton(juce::Graphics &g,
         
         const int cornerSize = 4;
         
-        g.setColour(buttonIsOn ? juce::Colours::white : juce::Colours::black);
+        g.setColour(buttonIsOn ?
+                    toggleButton.findColour(TextButton::ColourIds::buttonOnColourId) :
+                    toggleButton.findColour(TextButton::ColourIds::buttonColourId));
+        
         g.fillRoundedRectangle(bounds.toFloat(), cornerSize);
         
-        g.setColour(buttonIsOn ? juce::Colours::blue : juce::Colours::white);
+        g.setColour(buttonIsOn ? juce::Colours::black : juce::Colours::white);
         g.drawRoundedRectangle(bounds.toFloat(), cornerSize, 1);
         g.drawFittedText(toggleButton.getName(), bounds, juce::Justification::centred, 1);
 
