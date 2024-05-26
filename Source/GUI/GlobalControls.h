@@ -12,6 +12,7 @@
 
 #include <JuceHeader.h>
 #include "RotarySliderWithLabels.h"
+#include "../DSP/Params.h"
 
 struct GlobalControls : juce::Component
 {
