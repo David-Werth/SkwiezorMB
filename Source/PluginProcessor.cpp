@@ -397,7 +397,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout SkwiezorMBAudioProcessor::cr
     const auto& params = GetParams();
     
     auto attackReleaseRange = NormalisableRange<float>(0.1, 500, 0.1, 1);
-    auto thresholdRange = NormalisableRange<float>(-60, 12, 1, 1);
+    auto thresholdRange = NormalisableRange<float>(MIN_THRESHOLD, MAX_DECIBELS, 1, 1);
     
     auto choices = std::vector<double>{ 1, 1.5, 2, 3, 4, 5, 6, 8, 10, 15, 20, 50, 100 };
     juce::StringArray sa;
