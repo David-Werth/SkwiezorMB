@@ -17,7 +17,8 @@
 
 #include "GUI/SpectrumAnalyzer.h"
 
-class SkwiezorMBAudioProcessorEditor  : public juce::AudioProcessorEditor
+class SkwiezorMBAudioProcessorEditor  : public juce::AudioProcessorEditor,
+juce::Timer
 {
 public:
     SkwiezorMBAudioProcessorEditor (SkwiezorMBAudioProcessor&);
@@ -26,7 +27,8 @@ public:
     //==============================================================================
     void paint (juce::Graphics&) override;
     void resized() override;
-
+    
+    void timerCallback() override;
 private:
     LookAndFeel lnf;
     // This reference is provided as a quick way for your editor to
