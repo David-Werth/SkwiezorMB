@@ -290,7 +290,7 @@ void SkwiezorMBAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     
     updateState();
     
-    if ( true )
+    if ( false )
     {
         buffer.clear();
         auto block = juce::dsp::AudioBlock<float>(buffer);
