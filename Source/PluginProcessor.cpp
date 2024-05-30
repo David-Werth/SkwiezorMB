@@ -439,9 +439,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout SkwiezorMBAudioProcessor::cr
     layout.add(std::make_unique<AudioParameterBool>(juce::ParameterID{params.at(Names::Solo_Mid_Band), 1}, params.at(Names::Solo_Mid_Band), false));
     layout.add(std::make_unique<AudioParameterBool>(juce::ParameterID{params.at(Names::Solo_High_Band), 1}, params.at(Names::Solo_High_Band), false));
     
-    layout.add(std::make_unique<AudioParameterFloat>(juce::ParameterID{params.at(Names::Low_mid_Crossover_Freq), 1}, params.at(Names::Low_mid_Crossover_Freq), NormalisableRange<float>(20, 999, 1, 1), 400));
+    layout.add(std::make_unique<AudioParameterFloat>(juce::ParameterID{params.at(Names::Low_mid_Crossover_Freq), 1}, params.at(Names::Low_mid_Crossover_Freq), NormalisableRange<float>(MIN_FREQUENCY, 999, 1, 1), 400));
     
-    layout.add(std::make_unique<AudioParameterFloat>(juce::ParameterID{params.at(Names::Mid_high_Crossover_Freq), 1}, params.at(Names::Mid_high_Crossover_Freq), NormalisableRange<float>(1000, 20000, 1, 1), 2000));
+    layout.add(std::make_unique<AudioParameterFloat>(juce::ParameterID{params.at(Names::Mid_high_Crossover_Freq), 1}, params.at(Names::Mid_high_Crossover_Freq), NormalisableRange<float>(1000, MAX_FREQUENCY, 1, 1), 2000));
     
     
 
